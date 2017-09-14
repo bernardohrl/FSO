@@ -1,13 +1,12 @@
 #include <sys/msg.h>
 #include <string.h>
 
-#define MSG_SIZE 100
 #define KEYSRC "./Makefile"
 #define FAILURE -1
 
 struct my_msgbuf {
   long message_type;
-  char message_text[200];
+  char message_text[200];   //@BUG: Caso MSG_SIZE aumente muito, é provável que causa bugs, pois sempre deve ser ao menos 1 a mais.
 } buffer;
 
 
@@ -21,13 +20,15 @@ int send_message(char *message) {
     }
 
 
-    struct my_msgbuf message_send = {2};                                     //Numero abitrario
+    struct my_msgbuf message_send = {2};                                      // Numero abitrario
     strncpy(message_send.message_text, message, strlen(message));
 
     int result = msgsnd(queueId, &message_send, sizeof(message_send), 0);
     if(result == FAILURE)
         printf("\n\n\t\tERROR: MESSAGEM NOT SENT\n\n");
 
+    // printf("\nDebug: Erro acontece depois de mensagem ser mandada!\n");    // Quando tem 208 caracteres passa aqui!!!
+    return 0;
 }
 
 int recive_message() {
@@ -38,6 +39,6 @@ int recive_message() {
 
     msgrcv(queueId, &message_recived, sizeof(message_recived), 2, 0);
 
-    printf("mensagem: %s\n", message_recived.message_text);
+    printf("\n%s\n", message_recived.message_text);
 
 }
