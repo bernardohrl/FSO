@@ -4,18 +4,24 @@
 #include <sys/wait.h>
 #include "queue.h"
 
-#define MSG_SIZE 100
+#define KEY_SRC "./Makefile"
+#define KEY_LETTER 'A'
 #define FALSE 0
-#define TRUE 1
 
 void application_header();
 void transport_header();
 char* readMessage();
 
-
 int main() {
 
   pid_t process_son;              // Processo filho
+
+  key_t key = ftok(KEY_SRC, KEY_LETTER);                        // Gera key para acessar fila
+  int queueId = msgget(key, 0666 | IPC_CREAT);          // Gela fila com acesso apenas de leitura (0444)
+  if(queueId == FAILURE) {
+      printf("\n\n\t\tERROR: QUEUE NOT CREATED\n\n");
+      return 0;
+  }
 
   // Cria um processo filho exatamente igual ao processo pai
   process_son = fork();
@@ -25,19 +31,7 @@ int main() {
     printf("Insira a mensagem: ");
     char *message = readMessage();
 
-    int msgQt = (strlen(message) + (MSG_SIZE - 1))/MSG_SIZE;                  // -1 por causa do '\0'
-    int position = 0;
-    char messagePart[MSG_SIZE];
-
-    for(int i=0; i<msgQt; i++) {                                              // Manda quantas mensagens forem necessárias de acordo com o tamanho
-        memcpy( messagePart, &message[position],  (MSG_SIZE-1));
-        messagePart[MSG_SIZE-1] = '\0';
-        position += (MSG_SIZE-1);
-        printf("\n%s\n", messagePart);
-
-        send_message(message);
-        // printf("\nDebug: Erro aconteceu depois do retoro na função\n");    // Quando tem 208 caracteres não chega a passar aqui!!!
-    }
+    send_message(message, queueId);
 
     free(message);
 
@@ -46,7 +40,8 @@ int main() {
     waitpid(process_son, NULL, 0);
     transport_header();
 
-    recive_message();
+    recive_message(queueId);
+    msgctl(queueId, IPC_RMID, NULL);
 
   }
   return 0;

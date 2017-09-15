@@ -1,44 +1,51 @@
 #include <sys/msg.h>
 #include <string.h>
 
-#define KEYSRC "./Makefile"
 #define FAILURE -1
+#define MSG_SIZE 100
+
 
 struct my_msgbuf {
   long message_type;
-  char message_text[200];   //@BUG: Caso MSG_SIZE aumente muito, é provável que causa bugs, pois sempre deve ser ao menos 1 a mais.
+  char message_text[200];
 } buffer;
 
 
-int send_message(char *message) {
+int send_message(char *message, int queueId) {
 
-    key_t key = ftok(KEYSRC, 'j');                        // Gera key para acessar fila
-    int queueId = msgget(key, 0666 | IPC_CREAT);          // Gela fila com acesso apenas de leitura (0444)
-    if(queueId == FAILURE) {
-        printf("\n\n\t\tERROR: QUEUE NOT CREATED\n\n");
-        return 0;
+    char messagePart[MSG_SIZE];
+
+    int msgQt = (strlen(message) + (MSG_SIZE - 1))/MSG_SIZE;                  // -1 por causa do '\0'
+    int position = 0;
+
+    for(int i=0; i<msgQt; i++) {                                              // Manda quantas mensagens forem necessárias de acordo com o tamanho
+        struct my_msgbuf message_send = {2};                                  // Numero abitrario
+        memcpy( messagePart, &message[position],  (MSG_SIZE-1));
+
+        messagePart[strlen(messagePart)] = '\0';
+
+        strncpy(message_send.message_text, messagePart, strlen(messagePart));
+
+        int result = msgsnd(queueId, &message_send, sizeof(message_send), 0);
+        if(result == FAILURE) printf("\n\n\t\tERROR: MESSAGEM NOT SENT\n\n");
+
+
+        position += (MSG_SIZE-1);
     }
 
-
-    struct my_msgbuf message_send = {2};                                      // Numero abitrario
-    strncpy(message_send.message_text, message, strlen(message));
-
-    int result = msgsnd(queueId, &message_send, sizeof(message_send), 0);
-    if(result == FAILURE)
-        printf("\n\n\t\tERROR: MESSAGEM NOT SENT\n\n");
-
-    // printf("\nDebug: Erro acontece depois de mensagem ser mandada!\n");    // Quando tem 208 caracteres passa aqui!!!
     return 0;
 }
 
-int recive_message() {
+int recive_message(int queueId) {
 
-    key_t key = ftok(KEYSRC, 'j');
-    int queueId = msgget(key, 0666 | IPC_CREAT);
-    struct my_msgbuf message_recived;
+    struct my_msgbuf message_recived, *buf;
+    buf = &message_recived;
+    int result = 0;
 
-    msgrcv(queueId, &message_recived, sizeof(message_recived), 2, 0);
 
-    printf("\n%s\n", message_recived.message_text);
+    while(msgrcv(queueId, &message_recived, sizeof(message_recived), 2, IPC_NOWAIT) != FAILURE) {
+        printf("\nmessage: %s\n", message_recived.message_text);
+    }
 
+    return 0;
 }
