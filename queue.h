@@ -64,7 +64,6 @@ char* recive_message(int queueId) {
 
     }
 
-    printf("nova string: %s\n", str_to_ret);
     return str_to_ret;
 }
 

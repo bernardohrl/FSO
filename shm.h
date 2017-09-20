@@ -28,7 +28,7 @@ char *attach_shm(int shmId) {
 
 void add_message_shm(char *shm, char *message) {
     strcat(shm, message);
-    printf("\n\t\tMESSAGE ADDED TO SHM\n");
+    printf("\n\t\tMESSAGE ADDED TO SHM\n\n\n");
     return;
 }
 

@@ -25,7 +25,7 @@ int main() {
     application_header();
     do {
 
-        printf("Insira a mensagem: ");
+        printf("Insert message: ");
         char *message = readMessage();
 
         if(strcmp(message, END) != 0) {
@@ -37,20 +37,17 @@ int main() {
 
                 char *recived = recive_message(queueId);
                 // printf("\nmensagem retornada: %s\n", recived);
+                add_message_shm(shm, recived);
 
-                if(strcmp(recived, END) == 0)
-                    continues = 0;
-                else
-                    add_message_shm(shm, recived);
-
+                exit(127);                                                    // Mata processo filho depois que a mensagem é adicionada
             }
 
-            waitpid(process_son, NULL, 0);
+            waitpid(process_son, NULL, 0);                                    // Espera finalização do processo filho para continuar
 
         }
         else continues = 0;
 
-        printf("\n\nshm: %s\n", shm);
+        // printf("\n\nshm: %s\n", shm);
 
     } while(continues);
 
