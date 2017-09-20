@@ -11,6 +11,8 @@ struct message {
 } buffer;
 typedef struct message Message;
 
+
+
 int get_queue_id(char *key_src, char key_letter) {
     key_t key = ftok(key_src, key_letter);                                    // Gera key para acessar fila
     int queueId = msgget(key, 0666 | IPC_CREAT);                              // Gela fila com acesso apenas de leitura (0444)
@@ -20,6 +22,7 @@ int get_queue_id(char *key_src, char key_letter) {
     }
     return queueId;
 }
+
 
 int send_message(char *message, int queueId) {
 
@@ -46,17 +49,26 @@ int send_message(char *message, int queueId) {
     return 0;
 }
 
+
+
 char* recive_message(int queueId) {
-
     Message message_recived;
-    msgrcv(queueId, &message_recived, sizeof(message_recived), 2, IPC_NOWAIT);
+    char *str_to_ret = NULL; // = malloc (sizeof (char) * strlen(message_recived.message_text));
+    int size = 0;
 
-    char *str_to_ret = malloc (sizeof (char) * strlen(message_recived.message_text));
-    strcpy(str_to_ret, message_recived.message_text);
+    while (msgrcv(queueId, &message_recived, sizeof(message_recived), 2, IPC_NOWAIT) != -1) {
+        size += strlen(message_recived.message_text);
 
+        str_to_ret = realloc(str_to_ret, size);
+        strcat(str_to_ret, message_recived.message_text);
+
+    }
+
+    printf("nova string: %s\n", str_to_ret);
     return str_to_ret;
-
 }
+
+
 
 void delete_queue(int queueId) {
     msgctl(queueId, IPC_RMID, NULL);
