@@ -36,16 +36,29 @@ int send_message(char *message, int queueId) {
     return 0;
 }
 
-int recive_message(int queueId) {
+char* recive_message(int queueId) {
 
-    struct my_msgbuf message_recived, *buf;
-    buf = &message_recived;
-    int result = 0;
+    struct my_msgbuf message_recived;
+    msgrcv(queueId, &message_recived, sizeof(message_recived), 2, IPC_NOWAIT);
+
+    char *str_to_ret = malloc (sizeof (char) * strlen(message_recived.message_text));
+    strcpy(str_to_ret, message_recived.message_text);
+
+    return str_to_ret;
+
+}
 
 
-    while(msgrcv(queueId, &message_recived, sizeof(message_recived), 2, IPC_NOWAIT) != FAILURE) {
-        printf("\nmessage: %s\n", message_recived.message_text);
-    }
+// Cabeçalho da camada de aplicação do host A.
+void application_header() {
+  printf("\n*******************\n");
+  printf("Camada de aplicação\n");
+  printf("*******************\n");
+}
 
-    return 0;
+// Cabeçalho da camada de transporte do host A.
+void transport_header() {
+  printf("\n********************\n");
+  printf("Camada de transporte\n");
+  printf("********************\n");
 }

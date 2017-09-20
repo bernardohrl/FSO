@@ -6,13 +6,15 @@
 
 #define KEY_SRC "./Makefile"
 #define KEY_LETTER 'A'
-#define FALSE 0
 
 void application_header();
 void transport_header();
 char* readMessage();
 
 int main() {
+
+  char *END = "exit\n";
+  char *message;
 
   pid_t process_son;              // Processo filho
 
@@ -26,41 +28,44 @@ int main() {
   // Cria um processo filho exatamente igual ao processo pai
   process_son = fork();
 
-  if(process_son == FALSE) {
+  if(process_son == 0) {
+
     application_header();
     printf("Insira a mensagem: ");
-    char *message = readMessage();
 
-    send_message(message, queueId);
+    //Recebe quantas mensagens forem necessárias
+    do {
+
+        char *temp = readMessage();
+        message = malloc(sizeof(char) * strlen(temp));
+        strcpy(message, temp);
+        send_message(message, queueId);
+
+    } while(strcmp(message, END) != 0);
+
 
     free(message);
+    return 0;
 
   } else {
     // Espera o processo filho terminar (sincronização)
     waitpid(process_son, NULL, 0);
     transport_header();
 
-    recive_message(queueId);
+    do {
+        char *temp = recive_message(queueId);
+        printf("\nmessage: %s", temp);
+        message = malloc(sizeof(char) * strlen(temp));
+        strcpy(message, temp);
+    } while(strcmp(message, END) != 0);
+
+
     msgctl(queueId, IPC_RMID, NULL);
 
   }
   return 0;
 }
 
-
-// Cabeçalho da camada de aplicação do host A.
-void application_header() {
-  printf("\n*******************\n");
-  printf("Camada de aplicação\n");
-  printf("*******************\n");
-}
-
-// Cabeçalho da camada de transporte do host A.
-void transport_header() {
-  printf("\n********************\n");
-  printf("Camada de transporte\n");
-  printf("********************\n");
-}
 
 // Lê mensagem até o '\n' não se importando com o tamanho
 char* readMessage()
