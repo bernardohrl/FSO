@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <sys/wait.h>
 #include "queue.h"
+#include "shm.h"
 
 #define KEY_SRC "./Makefile"
 #define KEY_LETTER 'A'
@@ -17,13 +18,9 @@ int main() {
   char *message;
 
   pid_t process_son;              // Processo filho
+  int queueId = get_queue_id(KEY_SRC, KEY_LETTER);
+  int shmId = get_shm_id();
 
-  key_t key = ftok(KEY_SRC, KEY_LETTER);                        // Gera key para acessar fila
-  int queueId = msgget(key, 0666 | IPC_CREAT);          // Gela fila com acesso apenas de leitura (0444)
-  if(queueId == FAILURE) {
-      printf("\n\n\t\tERROR: QUEUE NOT CREATED\n\n");
-      return 0;
-  }
 
   // Cria um processo filho exatamente igual ao processo pai
   process_son = fork();
@@ -49,18 +46,20 @@ int main() {
 
   } else {
     // Espera o processo filho terminar (sincronização)
+    char *shm = attach_shm(shmId);
     waitpid(process_son, NULL, 0);
     transport_header();
 
     do {
         char *temp = recive_message(queueId);
-        printf("\nmessage: %s", temp);
         message = malloc(sizeof(char) * strlen(temp));
         strcpy(message, temp);
-    } while(strcmp(message, END) != 0);
 
+    } while((strcmp(message, END) != 0) && add_message_shm(shm, message));  // Checa se a mensagem é 'exit' e depois a adiciona à shm
 
-    msgctl(queueId, IPC_RMID, NULL);
+    msgctl(shmId, IPC_RMID, NULL);
+    delete_shm(shmId);
+    delete_queue(queueId);
 
   }
   return 0;
