@@ -51,8 +51,11 @@ int main() {
 
     } while(continues);
 
-    // shmdt(shmId);
+    printf("\n\n\t\tDESCONNECTED\n\n\n");
     delete_queue(queueId);
+
+    // printf("%s\n", shm);
+    // printf("%d\n", shmId);
 
     return 0;
 

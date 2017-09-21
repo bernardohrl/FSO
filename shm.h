@@ -1,6 +1,6 @@
 #include <sys/shm.h>
-
 #define ERROR -1
+
 
 int get_shm_id() {
     key_t key = ftok("./Makefile", 'A');                                      // Deve ser a mesma para o server e o cliente
@@ -14,6 +14,7 @@ int get_shm_id() {
     return shmId;
 }
 
+
 char *attach_shm(int shmId) {
   char *shm;
 
@@ -26,10 +27,25 @@ char *attach_shm(int shmId) {
   return shm;
 }
 
+
 void add_message_shm(char *shm, char *message) {
     strcat(shm, message);
     printf("\n\t\tMESSAGE ADDED TO SHM\n\n\n");
     return;
+}
+
+char get_message_shm(char *shm) {
+
+    char *message = (char*) malloc(strlen(shm) * sizeof(char));
+    strcpy(message, shm);
+    strtok(message, "\n");
+    printf("\n\tMESSAGE: %s\n", message);
+
+
+    char *newShm = strstr(shm, "\n");
+    memmove(newShm, newShm+1, strlen(newShm));
+    strcpy(shm, newShm);
+
 }
 
 void delete_shm(int shmId) {
