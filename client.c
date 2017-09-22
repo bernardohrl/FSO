@@ -8,8 +8,6 @@
 #define KEY_SRC "./Makefile"
 #define KEY_LETTER 'A'
 
-void application_header();
-void transport_header();
 char* readMessage();
 
 int main() {
@@ -22,43 +20,33 @@ int main() {
     char *shm = attach_shm(shmId);
 
 
-    application_header();
-    do {
+    while(check_continue()) {
 
-        printf("Insert message: ");
+        printf("\n\tINSERT MESSAGE: ");
         char *message = readMessage();
 
-        if(strcmp(message, END) != 0) {
-            send_message(message, queueId);
+        send_message_client(message, queueId);
 
-            // Cria um processo filho para colocar mensagem em memoria
-            pid_t process_son = fork();
-            if(process_son == 0) {
+        // Cria um processo filho para colocar mensagem em memoria
+        pid_t process_son = fork();
+        if(process_son == 0) {
 
-                char *recived = recive_message(queueId);
-                // printf("\nmensagem retornada: %s\n", recived);
-                add_message_shm(shm, recived);
+            char *recived = recive_message_client(queueId);
+            // printf("\nmensagem retornada: %s\n", recived);
+            add_message_shm(shm, recived);
 
-                exit(127);                                                    // Mata processo filho depois que a mensagem é adicionada
-            }
-
-            waitpid(process_son, NULL, 0);                                    // Espera finalização do processo filho para continuar
-
+            exit(127);                                                    // Mata processo filho depois que a mensagem é adicionada
         }
-        else continues = 0;
 
-        // printf("\n\nshm: %s\n", shm);
+        waitpid(process_son, NULL, 0);                                    // Espera finalização do processo filho para continuar
+        getchar();
+    }
 
-    } while(continues);
 
-    printf("\n\n\t\tDESCONNECTED\n\n\n");
+    printf("\n\n\tDESCONNECTED\n\n\n");
     delete_queue(queueId);
 
-    // printf("%s\n", shm);
-    // printf("%d\n", shmId);
-
     return 0;
-
 }
 
 
@@ -76,4 +64,19 @@ char* readMessage() {
     } while (templen==MSG_SIZE-1 && tempString[MSG_SIZE-2]!='\n');            // Continua apenas se: a ultima parte lida for do tamanho determinado (-1 do '\0')
     // printf("\n\n\n\n\tMensagem retornada: \n%s\n", input);                 // e se o penultimo caracter não seja '\n' (o ultimo é \0).
     return input;
+}
+
+int check_continue() {
+    char option;
+
+    printf("\033c");
+    printf("IF YOU WANT TO SEND MESSAGES TYPE ANYTHING");
+    printf("\nIF YOU WANT TO LEAVE TYPE 0\n");
+    printf("\n\tOPTION:\t");
+    option = getchar();
+    getchar();
+
+    if(option != '0') return 1;
+    else return 0;
+
 }

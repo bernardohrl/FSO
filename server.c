@@ -9,42 +9,54 @@
 #define KEY_SRC "./Makefile"
 #define KEY_LETTER 'B'
 
-void application_header();
-void transport_header();
+int check_continue();
 
 int main() {
-
-    int continues = 1;
 
     int queueId = get_queue_id(KEY_SRC, KEY_LETTER);
     int shmId = get_shm_id();
     char *shm = attach_shm(shmId);
 
-
-    // application_header();
-    do {
-
+    while(check_continue()) {
         int process_son = fork();
         if(process_son == 0) {
 
-            get_message_shm(shm);
-            getchar();
+            char *message = get_message_shm(shm);
+            send_message_server(message, queueId);
+
             exit(127);                                                    // Mata processo filho depois que a mensagem é adicionada
         }
 
         waitpid(process_son, NULL, 0);                                    // Espera finalização do processo filho para continuar
 
+        char *recived = recive_message_server(queueId);
+        if(strlen(recived) != 0)
+            printf("\n\n\tMESSAGE RECIVED:   %s\n\n", recived);
+        else
+            printf("\n\n\n\tNO MESSAGE\n\n");
 
+        getchar();
+    }
 
-    } while(continues);
-
-    printf("\n\n\t\tDESCONNECTED\n\n\n");
+    printf("\n\n\tDESCONNECTED\n\n\n");
     delete_queue(queueId);
-
-    // printf("%s\n", shm);
-    // printf("%d\n", shmId);
-
+    delete_shm(shmId);
+    free(shm);
 
     return 0;
+}
+
+int check_continue() {
+    char option;
+
+    printf("\033c");
+    printf("IF YOU WANT TO RECIVE MESSAGES TYPE ANYTHING");
+    printf("\nIF YOU WANT TO LEAVE TYPE 0\n");
+    printf("\n\tOPTION:\t");
+    option = getchar();
+    getchar();
+
+    if(option != '0') return 1;
+    else return 0;
 
 }

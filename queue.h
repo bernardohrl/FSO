@@ -24,7 +24,7 @@ int get_queue_id(char *key_src, char key_letter) {
 }
 
 
-int send_message(char *message, int queueId) {
+int send_message_client(char *message, int queueId) {
 
     char messagePart[MSG_SIZE];
 
@@ -51,7 +51,7 @@ int send_message(char *message, int queueId) {
 
 
 
-char* recive_message(int queueId) {
+char* recive_message_client(int queueId) {
     Message message_recived;
     char *str_to_ret = NULL; // = malloc (sizeof (char) * strlen(message_recived.message_text));
     int size = 0;
@@ -69,21 +69,32 @@ char* recive_message(int queueId) {
 
 
 
+char* recive_message_server(int queueId) {
+
+    Message message_recived;
+    char *recived = "";
+
+    if(msgrcv(queueId, &message_recived, sizeof(message_recived), 2, IPC_NOWAIT) != ERROR) {
+        recived = malloc (sizeof (char) * strlen(message_recived.message_text)+1);
+        strcpy(recived, message_recived.message_text);
+    }
+
+    return recived;
+}
+
+int send_message_server(char *message, int queueId) {
+
+    // Manda quantas mensagens forem necessárias de acordo com o tamanho
+    Message message_send = {2};                                           // Numero abitrario
+    strncpy(message_send.message_text, message, strlen(message));
+
+    int result = msgsnd(queueId, &message_send, sizeof(message_send), 0);
+    if(result == ERROR) printf("\n\n\t\tERROR: MESSAGEM NOT SENT\n\n");
+
+    return 0;
+}
+
+
 void delete_queue(int queueId) {
     msgctl(queueId, IPC_RMID, NULL);
-}
-
-
-// Cabeçalho da camada de aplicação do host A.
-void application_header() {
-  printf("\n*******************\n");
-  printf("Camada de aplicação\n");
-  printf("*******************\n");
-}
-
-// Cabeçalho da camada de transporte do host A.
-void transport_header() {
-  printf("\n********************\n");
-  printf("Camada de transporte\n");
-  printf("********************\n");
 }
