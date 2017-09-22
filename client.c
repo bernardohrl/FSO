@@ -70,13 +70,14 @@ int check_continue() {
     char option;
 
     printf("\033c");
-    printf("IF YOU WANT TO SEND MESSAGES TYPE ANYTHING");
+    printf("IF YOU WANT TO SEND MESSAGES TYPE 1");
     printf("\nIF YOU WANT TO LEAVE TYPE 0\n");
     printf("\n\tOPTION:\t");
     option = getchar();
     getchar();
 
-    if(option != '0') return 1;
-    else return 0;
+    if(option == '0') return 0;
+    if(option == '1') return 1;
+    else return check_continue();
 
 }
